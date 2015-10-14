@@ -11,6 +11,7 @@ addons:
   apt:
     packages:
     - texlive-base
+    - texlive-latex-extra
 before_install:
     - git clone --quiet --depth 1 https://github.com/minrk/travis-wheels travis-wheels
 install:
@@ -19,6 +20,6 @@ install:
     - pip install nbconvert[execute,serve,test]
     - python -m ipykernel.kernelspec --user
 script:
-    - nosetests -w /tmp --with-coverage --cover-package nbconvert nbconvert
+    - nosetests -v -w /tmp --with-coverage --cover-package nbconvert nbconvert
 after_success:
     - coveralls
