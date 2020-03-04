@@ -7,6 +7,7 @@
 import os
 import io
 import sys
+import tarfile
 
 from setuptools import setup
 from setuptools.command.bdist_egg import bdist_egg
@@ -43,9 +44,12 @@ package_data = {
     ],
 }
 
+# extract notebook css from PyPI sdist
 notebook_css_version = '5.4.0'
-notebook_css_url = "https://cdn.jupyter.org/notebook/%s/style/style.min.css" % notebook_css_version
-
+notebook_css_url = (
+    "https://pypi.io/packages/source/n/notebook/notebook-{version}.tar.gz"
+    "!notebook-{version}/notebook/static/style/style.min.css"
+).format(version=notebook_css_version)
 
 jupyterlab_css_version = '0.1.0'
 jupyterlab_css_url = "https://unpkg.com/@jupyterlab/nbconvert-css@%s/style/index.css" % jupyterlab_css_version
@@ -63,6 +67,7 @@ template_css_urls = {
 
 
 class FetchCSS(Command):
+
     description = "Fetch CSS from CDN"
     user_options = []
     def initialize_options(self):
@@ -96,6 +101,25 @@ class FetchCSS(Command):
         c.perform()
         return buf.getvalue()
 
+    def _download_and_extract(self, url):
+        """Download a file from a URL
+
+        optionally extracting a single file from a tar.gz archive
+        if path is specified after '!'
+
+        If url has the form https://url.tar.gz!path.ext
+        url is downloaded and only path.ext is extracted.
+        """
+        if '!' in url:
+            url, path = url.rsplit('!')
+            # download tgz
+            tgz = BytesIO(self._download(url))
+            tf = tarfile.open(fileobj=tgz, mode='r:gz')
+            # return just one file in tgz
+            return tf.extractfile(path).read()
+        else:
+            return self._download(url)
+
     def run(self):
         for template_name, resources in template_css_urls.items():
             for url, filename in resources:
@@ -108,7 +132,7 @@ class FetchCSS(Command):
                     return
                 print("Downloading CSS: %s" % url)
                 try:
-                    css = self._download(url)
+                    css = self._download_and_extract(url)
                 except Exception as e:
                     msg = "Failed to download css from %s: %s" % (url, e)
                     print(msg, file=sys.stderr)
