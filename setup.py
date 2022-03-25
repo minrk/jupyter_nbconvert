@@ -218,6 +218,7 @@ setup_args['install_requires'] = [
     'jupyterlab_pygments',
     'traitlets>=5.0',
     'jupyter_core',
+    'markupsafe',
     'nbformat>=4.4',
     'entrypoints>=0.2.2',
     'bleach',
